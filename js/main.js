@@ -10,7 +10,7 @@ function delegationFunc(e) {
     // elem이 data-name이라는 attribute를 가지고 있을 때까지 부모노드로 올라감
     while (!elem.getAttribute('data-name')) {
         elem = elem.parentNode;
-        if (nodeName == 'body') {
+        if (elem.nodeName === 'BODY') {
             elem = null;
             return;
         }
@@ -18,19 +18,115 @@ function delegationFunc(e) {
 
     if (elem.matches('[data-name="heartbeat"]')) {
         console.log('하트');
+
+        let pk = elem.getAttribute('name');
+
+        $.ajax ({
+            type: 'POST',
+            url: 'data/like.json',
+            data: {pk},
+            dataType: 'json',
+            success: function(response){
+                let likeCount = document.querySelector('#like-count-37');
+                likeCount.innerHTML = '좋아요 ' + response.like_count + '개';
+            },
+            error: function(request, status, error){
+                alert('로그인이 필요합니다.');
+                window.location.replace('https://www.google.com');
+            }
+        })
+
     } else if (elem.matches('[data-name="bookmark"]')) {
         console.log('북마크');
-    } else if (elem.matches('[data-name="share"]')) {
-        console.log('공유');
-    } else if (elem.matches('[data-name="more"]')) {
-        console.log('더보기');
+
+        let pk = elem.getAttribute('name');
+
+        $.ajax ({
+            type: 'POST',
+            url: 'data/bookmark.json',
+            data: {pk},
+            dataType: 'json',
+            success: function(response){
+                let bookmarkCount = document.querySelector('#bookmark-count-37');
+                bookmarkCount.innerHTML = '북마크 ' + response.bookmark_count + '개';
+            },
+            error: function(request, status, error){
+                alert('로그인이 필요합니다.');
+                window.location.replace('https://www.google.com');
+            }
+        })
+    } else if (elem.matches('[data-name="comment"]')) {
+        let content = document.querySelector('#add-comment-post-37 > input[type=text]').value;
+
+        console.log(content);
+
+        if (content.length > 140) {
+            alert('댓글은 최대 140자 입력이 가능합니다. 현재 글자수 : ' + content.length);
+            return;
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: './comment.html',
+            data: {
+                'pk': 37,
+                'content': content
+            },
+            dataType: 'html',
+            success: function(data) {
+                document.querySelector('#comment-list-ajax-post-37').insertAdjacentHTML('afterbegin', data);
+            },
+            error: function(request, status, error){
+                alert('문제가 발생했습니다.');
+            }
+        });
+
+        document.querySelector('#add-comment-post-37 > input[type=text]').value = '';
+    } else if (elem.matches('[data-name="comment-delete"]')) {
+        $.ajax({
+            type: 'POST',
+            url: 'data/delete.json',
+            data: {
+                'pk': 37,
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status) {
+                    let comt = document.querySelector('.comment-detail');
+                    comt.remove();
+                }
+            },
+            error: function(request, status, error){
+                alert('문제가 발생했습니다.');
+            }
+        })
+    } else if (elem.matches('[data-name="follow"]')) {
+        $.ajax({
+            type: 'POST',
+            url: 'data/follow.json',
+            data: {
+                'pk': 37
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status){
+                    document.querySelector('input.follow').value = "팔로잉";
+                } else {
+                    document.querySelector('input.follow').value = "팔로워";
+                }
+            },
+            error: function(request, status, error){
+                alert('문제가 발생했습니다.');
+                window.location.replace("https://www.google.com");
+            }
+        })
     }
 
     elem.classList.toggle('on');
 }
 function resizeFunc(){
 
-    console.log('resize');
+    // console.log('resize');
     if (pageYOffset >= 10) {
         let calcWidth = (window.innerWidth *0.5) + 167;
         console.log(window.innerWidth *0.5);
@@ -52,7 +148,11 @@ function resizeFunc(){
 }
 
 function scrollFunc(){
-    console.log(pageYOffset);
+    let scrollHeight = pageYOffset + window.innerHeight;
+    let documentHeight = document.body.scrollHeight;
+
+    console.log('scrollHeight : ' + scrollHeight);
+    console.log('documentHeight : ' + documentHeight);
 
     if (pageYOffset >= 10) {
         header.classList.add('on');
@@ -68,6 +168,41 @@ function scrollFunc(){
         }
     }
 
+    if (scrollHeight >= documentHeight) {
+        let page = document.querySelector('#page').value;
+        document.querySelector('#page').value = parseInt(page) + 1;
+        callMorePostAjax(page);
+
+        if (page > 5) {
+            return;
+        }
+    }
+
+}
+
+function callMorePostAjax(page) {
+
+    if (page > 5) {
+        return;
+    }
+
+    $.ajax({
+        type: 'POST',
+        url: './post.html',
+        data: {
+            'page': page
+        },
+        dataType: 'html',
+        success: addMorePostAjax,
+        error: function(request, status, error){
+            alert('문제가 발생했습니다.');
+            window.location.replace("https://www.google.com");
+        }
+    })
+}
+
+function addMorePostAjax(data) {
+    delegation.insertAdjacentHTML('beforeend', data);
 }
 
 // 새로고침 시에 맨위 맨 왼쪽으로
@@ -80,3 +215,4 @@ if (delegation) {
 }
 window.addEventListener('resize', resizeFunc);
 window.addEventListener('scroll', scrollFunc);
+
