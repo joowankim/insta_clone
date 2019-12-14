@@ -1,6 +1,6 @@
 {% extends "post/layout.html" %}
 {% load static %}
-
+{% load post_extras %}  <!-- add_link 함수를 import 하기 위함 -->
 {% block head %}
 
 <link rel="stylesheet" href="{% static 'css/style.css' %}">
@@ -118,6 +118,8 @@
                             <span id="like-count-{{ post.id }}">좋아요 {{ post.like_count }}개</span>
                             <span id="bookmark-count-{{ post.id }}">북마크 {{ post.bookmark_count }}개</span>
                         </div>
+
+                        <div class="content">{{ post.content|add_link|safe|linebreaksbr}}</div>
 
                         <div class="comment_container">
                             <div class="comment" id="comment-list-ajax-post{{ post.id }}">
